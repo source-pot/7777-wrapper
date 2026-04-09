@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
@@ -112,34 +111,12 @@ func run() error {
 		args = append(args, "--license", cfg.License)
 	}
 
-	cmd := exec.Command("7777", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("could not start 7777: %w", err)
+	binary, err := exec.LookPath("7777")
+	if err != nil {
+		return fmt.Errorf("could not find 7777: %w", err)
 	}
 
-	// Forward signals to child process
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigCh)
-
-	done := make(chan struct{})
-	go func() {
-		select {
-		case sig := <-sigCh:
-			if cmd.Process != nil {
-				cmd.Process.Signal(sig)
-			}
-		case <-done:
-		}
-	}()
-
-	err = cmd.Wait()
-	close(done)
-	return err
+	return syscall.Exec(binary, append([]string{"7777"}, args...), os.Environ())
 }
 
 func main() {
