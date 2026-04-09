@@ -89,6 +89,27 @@ func run() error {
 	if selected.AWSRegion != "" {
 		args = append(args, "--region", selected.AWSRegion)
 	}
+	if selected.SecurityGroup != "" {
+		args = append(args, "--security-group", selected.SecurityGroup)
+	}
+	if selected.Subnet != "" {
+		args = append(args, "--subnet", selected.Subnet)
+	}
+	if selected.TTL > 0 {
+		args = append(args, "--ttl", strconv.Itoa(selected.TTL))
+	}
+	if selected.Forever != nil && *selected.Forever {
+		args = append(args, "--forever")
+	}
+	if selected.Elasticache {
+		args = append(args, "--elasticache")
+	}
+	if cfg.Verbose {
+		args = append(args, "--verbose")
+	}
+	if cfg.License != "" {
+		args = append(args, "--license", cfg.License)
+	}
 
 	cmd := exec.Command("7777", args...)
 	cmd.Stdout = os.Stdout

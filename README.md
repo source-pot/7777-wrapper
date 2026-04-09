@@ -35,6 +35,16 @@ The recommended location is `~/.config/db-tunnel/config.toml`:
 aws_profile = "default"
 aws_region = "ap-southeast-2"
 
+# Global-only settings
+verbose = true
+license = "your-license-key"
+
+# Global defaults with per-database override support
+security_group = "sg-0123456789abcdef0"
+subnet = "subnet-0123456789abcdef0"
+ttl = 2
+forever = false
+
 # Each [[database]] block defines a tunnel you can connect to.
 [[database]]
 name = "Production Main"          # Shown in the picker
@@ -47,26 +57,38 @@ database = "other-db"
 port = 7720
 aws_profile = "other-profile"    # Overrides global default
 aws_region = "us-east-1"         # Overrides global default
+security_group = "sg-other"      # Overrides global default
+forever = true                   # Overrides global default
 ```
 
 ### Fields
 
-**Global (optional):**
+**Global only:**
 
 | Field | Description |
 |---|---|
-| `aws_profile` | Default AWS profile for all databases |
-| `aws_region` | Default AWS region for all databases |
+| `verbose` | Enable verbose 7777 output |
+| `license` | 7777 license code |
 
-**Per-database:**
+**Global default with per-database override:**
+
+| Field | Description |
+|---|---|
+| `aws_profile` | AWS profile |
+| `aws_region` | AWS region |
+| `security_group` | Fargate security group |
+| `subnet` | Fargate subnet |
+| `ttl` | Tunnel time-to-live in hours (7777 default: 2) |
+| `forever` | Ignore TTL and run the tunnel indefinitely |
+
+**Per-database only:**
 
 | Field | Required | Description |
 |---|---|---|
 | `name` | Yes | Label shown in the interactive picker |
 | `database` | Yes | RDS database identifier passed to 7777 |
 | `port` | Yes | Local port for the tunnel |
-| `aws_profile` | No | Overrides global `aws_profile` |
-| `aws_region` | No | Overrides global `aws_region` |
+| `elasticache` | No | Connect to ElastiCache instead of RDS |
 
 ## Usage
 

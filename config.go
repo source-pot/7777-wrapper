@@ -8,17 +8,28 @@ import (
 )
 
 type DatabaseConfig struct {
-	Name       string `toml:"name"`
-	Database   string `toml:"database"`
-	Port       int    `toml:"port"`
-	AWSProfile string `toml:"aws_profile"`
-	AWSRegion  string `toml:"aws_region"`
+	Name          string `toml:"name"`
+	Database      string `toml:"database"`
+	Port          int    `toml:"port"`
+	AWSProfile    string `toml:"aws_profile"`
+	AWSRegion     string `toml:"aws_region"`
+	SecurityGroup string `toml:"security_group"`
+	Subnet        string `toml:"subnet"`
+	TTL           int    `toml:"ttl"`
+	Forever       *bool  `toml:"forever"`
+	Elasticache   bool   `toml:"elasticache"`
 }
 
 type Config struct {
-	AWSProfile string           `toml:"aws_profile"`
-	AWSRegion  string           `toml:"aws_region"`
-	Databases  []DatabaseConfig `toml:"database"`
+	AWSProfile    string           `toml:"aws_profile"`
+	AWSRegion     string           `toml:"aws_region"`
+	SecurityGroup string           `toml:"security_group"`
+	Subnet        string           `toml:"subnet"`
+	TTL           int              `toml:"ttl"`
+	Forever       bool             `toml:"forever"`
+	Verbose       bool             `toml:"verbose"`
+	License       string           `toml:"license"`
+	Databases     []DatabaseConfig `toml:"database"`
 }
 
 func LoadConfig(path string) (Config, error) {
@@ -54,6 +65,19 @@ func LoadConfig(path string) (Config, error) {
 		}
 		if db.AWSRegion == "" {
 			cfg.Databases[i].AWSRegion = cfg.AWSRegion
+		}
+		if db.SecurityGroup == "" {
+			cfg.Databases[i].SecurityGroup = cfg.SecurityGroup
+		}
+		if db.Subnet == "" {
+			cfg.Databases[i].Subnet = cfg.Subnet
+		}
+		if db.TTL == 0 {
+			cfg.Databases[i].TTL = cfg.TTL
+		}
+		if db.Forever == nil {
+			f := cfg.Forever
+			cfg.Databases[i].Forever = &f
 		}
 	}
 
