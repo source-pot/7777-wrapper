@@ -12,20 +12,44 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func configPath() (string, error) {
+func configPaths() []string {
+	var paths []string
+
+	home, err := os.UserHomeDir()
+	if err == nil {
+		paths = append(paths,
+			filepath.Join(home, ".config", "db-tunnel", "config.toml"),
+			filepath.Join(home, ".db-tunnel.toml"),
+		)
+	}
+
 	exe, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("could not determine executable path: %w", err)
+	if err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			paths = append(paths, filepath.Join(filepath.Dir(resolved), "config.toml"))
+		}
 	}
-	exe, err = filepath.EvalSymlinks(exe)
-	if err != nil {
-		return "", fmt.Errorf("could not resolve executable symlink: %w", err)
+
+	return paths
+}
+
+func findConfig() (string, error) {
+	paths := configPaths()
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			return p, nil
+		}
 	}
-	return filepath.Join(filepath.Dir(exe), "config.toml"), nil
+
+	msg := "config file not found, checked:"
+	for _, p := range paths {
+		msg += "\n  " + p
+	}
+	return "", fmt.Errorf("%s", msg)
 }
 
 func run() error {
-	cfgPath, err := configPath()
+	cfgPath, err := findConfig()
 	if err != nil {
 		return err
 	}

@@ -17,9 +17,16 @@ Place the `db-tunnel` binary wherever you like (e.g. `/usr/local/bin/`).
 
 ## Configuration
 
-Create a `config.toml` file in the same directory as the `db-tunnel` binary. See `config.example.toml` for all available options.
+db-tunnel looks for a config file in the following locations (first found wins):
 
-    cp config.example.toml config.toml
+1. `~/.config/db-tunnel/config.toml`
+2. `~/.db-tunnel.toml`
+3. `config.toml` next to the `db-tunnel` binary
+
+The recommended location is `~/.config/db-tunnel/config.toml`:
+
+    mkdir -p ~/.config/db-tunnel
+    cp config.example.toml ~/.config/db-tunnel/config.toml
 
 ### Config format
 

@@ -1,7 +1,9 @@
 # db-tunnel configuration
 #
-# Copy this file to config.toml (next to the db-tunnel binary) and
-# update with your database details.
+# Copy this file to one of the following locations:
+#   ~/.config/db-tunnel/config.toml  (recommended)
+#   ~/.db-tunnel.toml
+#   config.toml (next to the db-tunnel binary)
 #
 # Global defaults — applied to databases that don't specify their own.
 aws_profile = "my-aws-profile"
