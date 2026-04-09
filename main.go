@@ -67,6 +67,7 @@ func run() error {
 	prompt := promptui.Select{
 		Label: "Select a database",
 		Items: names,
+		Size:  len(names),
 	}
 
 	idx, _, err := prompt.Run()
