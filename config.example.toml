@@ -1,0 +1,35 @@
+# db-tunnel configuration
+#
+# Copy this file to config.toml (next to the db-tunnel binary) and
+# update with your database details.
+#
+# Global defaults — applied to databases that don't specify their own.
+aws_profile = "my-aws-profile"
+aws_region = "ap-southeast-2"
+
+# Each [[database]] block defines a tunnel target.
+# Required fields: name, database, port
+# Optional fields: aws_profile, aws_region (override globals)
+
+[[database]]
+name = "Production Main"
+database = "myapp-prod-master"
+port = 7700
+
+[[database]]
+name = "Production EU"
+database = "myapp-prod-eu"
+port = 7701
+aws_region = "eu-west-1"
+
+[[database]]
+name = "Staging"
+database = "myapp-stage"
+port = 7710
+
+[[database]]
+name = "Other Project"
+database = "other-project-db"
+port = 7720
+aws_profile = "other-project"
+aws_region = "us-east-1"
