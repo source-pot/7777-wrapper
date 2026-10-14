@@ -106,4 +106,8 @@ db-tunnel reads your config, presents an interactive picker, then runs:
 
 The tunnel stays open in the foreground. Press `Ctrl+C` to close it — 7777 will clean up its Fargate bastion container automatically.
 
+### Automatic shutdown
+
+7777 closes its tunnel once its TTL expires (`ttl`, in hours, default 2). db-tunnel closes the tunnel 1 minute before that, sending 7777 the same single SIGINT as `Ctrl+C` so it cleans up properly. The closing time is printed when the tunnel starts. Tunnels with `forever = true` are never closed automatically.
+
 To connect to multiple databases simultaneously, run db-tunnel in separate terminal windows.
