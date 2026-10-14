@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/manifoldco/promptui"
 )
@@ -116,7 +119,93 @@ func run() error {
 		return fmt.Errorf("could not find 7777: %w", err)
 	}
 
-	return syscall.Exec(binary, append([]string{"7777"}, args...), os.Environ())
+	lifetime, limited := tunnelLifetime(selected)
+	if !limited {
+		return runTunnel(binary, args, 0)
+	}
+
+	stopAt := time.Now().Add(lifetime)
+	fmt.Printf("Tunnel will be closed at %s, 1 minute before 7777's TTL expires.\n", stopAt.Format("15:04"))
+	return runTunnel(binary, args, lifetime)
+}
+
+// 7777 shuts its tunnel down after --ttl hours, defaulting to 2.
+const defaultTTLHours = 2
+
+// How long before 7777's TTL expires we close the tunnel ourselves.
+const shutdownMargin = time.Minute
+
+// tunnelLifetime returns how long db-tunnel lets 7777 run before closing it,
+// and false when the tunnel runs forever.
+func tunnelLifetime(db DatabaseConfig) (time.Duration, bool) {
+	if db.Forever != nil && *db.Forever {
+		return 0, false
+	}
+
+	ttl := db.TTL
+	if ttl <= 0 {
+		ttl = defaultTTLHours
+	}
+	return time.Duration(ttl)*time.Hour - shutdownMargin, true
+}
+
+// runTunnel runs 7777 as a child process and, when lifetime is non-zero,
+// sends it a single SIGINT once lifetime has passed so it shuts down cleanly.
+//
+// Ctrl+C and terminal hangups already reach 7777 directly because it shares
+// our process group, so we swallow those rather than forwarding them: a second
+// SIGINT makes 7777 skip cleaning up its AWS security group rules. SIGTERM is
+// only sent to us, so that one is forwarded.
+func runTunnel(binary string, args []string, lifetime time.Duration) error {
+	cmd := exec.Command(binary, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("could not start 7777: %w", err)
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+
+	var deadline <-chan time.Time
+	if lifetime > 0 {
+		timer := time.NewTimer(lifetime)
+		defer timer.Stop()
+		deadline = timer.C
+	}
+
+	for {
+		select {
+		case err := <-done:
+			return childResult(err)
+		case <-deadline:
+			fmt.Println("\nTTL is about to expire, closing the tunnel...")
+			cmd.Process.Signal(syscall.SIGINT)
+			deadline = nil
+		case sig := <-sigCh:
+			if sig == syscall.SIGTERM {
+				cmd.Process.Signal(sig)
+			}
+		}
+	}
+}
+
+// childResult passes 7777's exit code through as our own.
+func childResult(err error) error {
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		return err
+	}
+	if exitErr.ExitCode() > 0 {
+		os.Exit(exitErr.ExitCode())
+	}
+	return nil
 }
 
 func main() {
